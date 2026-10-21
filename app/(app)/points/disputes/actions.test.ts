@@ -9,6 +9,7 @@ vi.mock("@/lib/tenant-context", () => ({
 vi.mock("@/lib/agents/membership", () => ({ isTenantAdmin: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    $transaction: vi.fn(),
     pointDispute: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), create: vi.fn() },
     pointEntry: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), createMany: vi.fn() },
     bug: { findUnique: vi.fn(), findFirst: vi.fn() },
@@ -23,6 +24,7 @@ import { openDisputeAction, resolveDisputeAction } from "./actions";
 
 type Mock = ReturnType<typeof vi.fn>;
 const p = prisma as unknown as {
+  $transaction: Mock;
   pointDispute: Record<"findUnique" | "findMany" | "update" | "create", Mock>;
   pointEntry: Record<"findUnique" | "findMany" | "update" | "createMany", Mock>;
   bug: Record<"findFirst" | "findUnique", Mock>;
@@ -49,6 +51,7 @@ const openDisputeRow = {
 describe("openDisputeAction (#436)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    p.$transaction.mockImplementation(async (run: (tx: typeof prisma) => unknown) => run(prisma));
     vi.mocked(requireUser).mockResolvedValue(user);
     vi.mocked(currentTenantIdFor).mockResolvedValue("tenant-1");
     p.bug.findFirst.mockResolvedValue({ id: "bug-1" });
@@ -195,6 +198,7 @@ describe("resolveDisputeAction (#436)", () => {
       fd({ disputeId: "dispute-1", decision: "correct", note: "High, not medium." }),
     );
     expect(result.ok).toBe(true);
+    expect(p.$transaction).toHaveBeenCalledOnce();
     expect(p.pointEntry.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { correctedAt: expect.any(Date) } }),
     );
@@ -203,6 +207,36 @@ describe("resolveDisputeAction (#436)", () => {
         data: [expect.objectContaining({ points: -25, sourceKey: "undo:entry-1" })],
       }),
     );
+  });
+
+  it("keeps correction writes inside the transaction when a reversal fails", async () => {
+    p.pointDispute.findUnique.mockResolvedValue({ ...openDisputeRow, pointEntryId: "entry-1" });
+    p.pointEntry.findUnique
+      .mockResolvedValueOnce({
+        id: "entry-1",
+        tenantId: "tenant-1",
+        userId: "user-1",
+        bugId: "bug-1",
+        role: "solver",
+        points: 25,
+        correctedAt: null,
+      })
+      .mockResolvedValueOnce({ id: "entry-1", correctedAt: null });
+    p.pointEntry.createMany.mockRejectedValue(new Error("reversal insert failed"));
+
+    await expect(
+      resolveDisputeAction(
+        undefined,
+        fd({ disputeId: "dispute-1", decision: "correct" }),
+      ),
+    ).rejects.toThrow("reversal insert failed");
+
+    expect(p.$transaction).toHaveBeenCalledOnce();
+    expect(p.pointEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { correctedAt: expect.any(Date) } }),
+    );
+    expect(p.pointEntry.createMany).toHaveBeenCalledOnce();
+    expect(p.pointDispute.update).not.toHaveBeenCalled();
   });
 
   it("rejects without touching the ledger", async () => {
