@@ -211,16 +211,10 @@ export function IssueFilters({
   // Follow the URL when it changes from outside (Back, a link), adjusting
   // state during render rather than in an effect.
   const [lastQuery, setLastQuery] = useState(currentQuery);
-  // #1062: track whether the user has typed since the last URL sync so we
-  // don't overwrite their input when a debounced navigation completes.
-  const textIsUserEditedRef = useRef(false);
-  if (currentQuery !== lastQuery && !textIsUserEditedRef.current) {
+  // Only sync text from URL if user hasn't typed anything new (#570).
+  if (currentQuery !== lastQuery && text === currentQuery) {
     setLastQuery(currentQuery);
     setText(currentQuery);
-  }
-  // Reset the dirty flag when the local text matches the URL again.
-  if (text === currentQuery) {
-    textIsUserEditedRef.current = false;
   }
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -436,7 +430,6 @@ export function IssueFilters({
               className="w-full rounded-lg border border-slate-300 pl-3 pr-8 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               onChange={(event) => {
                 setText(event.target.value);
-                  textIsUserEditedRef.current = true;
                 setOpen(true);
                 setActive(-1);
               }}
