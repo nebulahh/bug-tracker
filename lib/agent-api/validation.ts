@@ -472,7 +472,7 @@ export async function submitValidation(
         }
       }
       if (body.kind === "real" && body.verdict === "accept" && !duplicate) {
-        const reviewers = await countedConfirmationReviewers(tx, bug);
+        const reviewers = await countedConfirmationReviewers(tx, bug, bug.confirmed);
         const index = reviewers.indexOf(onBehalfOfUserId);
         if (index >= 0) {
           await award(tx, {
