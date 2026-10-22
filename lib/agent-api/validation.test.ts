@@ -506,8 +506,9 @@ describe("confirmation: the two-reviewer rule (#433)", () => {
       t1: { id: "t1", ownerUserId: "tia", level: "triager" },
     };
 
-    // Initially confirmed
+    // Initially confirmed (submitValidation sets confirmed: true in the DB)
     expect(await isConfirmed("bug1")).toBe(true);
+    db.bug.findUnique.mockResolvedValue(bugRow({ confirmed: true }));
 
     // Issue was edited at tEdit (after t0)
     db.bugRevision.findFirst.mockResolvedValue({ editedAt: tEdit });

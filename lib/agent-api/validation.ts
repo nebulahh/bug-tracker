@@ -118,6 +118,7 @@ const reviewedBugSelect = {
   reporterId: true,
   beneficiaryUserId: true,
   duplicateOfId: true,
+  confirmed: true,
   createdByAgentId: true,
   createdByAgent: { select: { ownerUserId: true } },
   claims: { select: { status: true, releasedAt: true, beneficiaryUserId: true, dispatcherUserId: true, agent: { select: { ownerUserId: true } } } },
@@ -157,10 +158,18 @@ async function latestRevisionAt(db: Db, bug: LoadedBug): Promise<Date | null> {
 /**
  * People credited for accepts of kind `real` that still count, oldest first.
  * One per owner: a second agent of the same person does not add a credit.
+ *
+ * Pre-edit validations only stop counting once the issue has been confirmed
+ * and then edited again (#521). Before confirmation, all validations count
+ * regardless of intervening edits.
  */
-async function countedConfirmationReviewers(db: Db, bug: LoadedBug): Promise<string[]> {
+async function countedConfirmationReviewers(
+  db: Db,
+  bug: LoadedBug,
+  alreadyConfirmed: boolean,
+): Promise<string[]> {
   const dbDelegates = db as unknown as OptionalDbDelegates;
-  const latestRevision = await latestRevisionAt(db, bug);
+  const latestRevision = alreadyConfirmed ? await latestRevisionAt(db, bug) : null;
 
   if (!dbDelegates.issueValidation?.findMany) return [];
 
@@ -199,7 +208,7 @@ async function countedConfirmationReviewers(db: Db, bug: LoadedBug): Promise<str
 
 /** Accepts of kind `real` that count toward confirming `bug`. */
 async function countedConfirmations(db: Db, bug: LoadedBug): Promise<number> {
-  return (await countedConfirmationReviewers(db, bug)).length;
+  return (await countedConfirmationReviewers(db, bug, bug.confirmed)).length;
 }
 
 /**
@@ -211,7 +220,9 @@ async function countedConfirmations(db: Db, bug: LoadedBug): Promise<number> {
 async function isTriageCleared(db: Db, bug: LoadedBug): Promise<boolean> {
   const dbDelegates = db as unknown as OptionalDbDelegates;
   if (!dbDelegates.issueValidation?.findMany) return false;
-  const latestRevision = await latestRevisionAt(db, bug);
+  // Before confirmation, all triage clearances count regardless of edits.
+  // After confirmation, an edit invalidates prior clearances.
+  const latestRevision = bug.confirmed ? await latestRevisionAt(db, bug) : null;
   const clears = await db.issueValidation.findMany({
     where: {
       bugId: bug.id,
