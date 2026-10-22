@@ -316,7 +316,7 @@ export async function standingValidationAwards(db: Db, bugId: string): Promise<P
   // Confirming reviewers are skipped entirely once a duplicate marker stands,
   // exactly as at submit time.
   if (!(await isDuplicate(db, bug))) {
-    const reviewers = await countedConfirmationReviewers(db, bug);
+    const reviewers = await countedConfirmationReviewers(db, bug, false);
     reviewers.forEach((userId, index) => {
       entries.push({
         tenantId: bug.tenantId,
