@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { AgentContext } from "@/lib/agents/require-agent";
 import { IssueApiError } from "@/lib/agent-api/issues";
 
 const id = z.string().trim().min(1).max(191);

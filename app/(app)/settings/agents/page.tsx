@@ -22,6 +22,7 @@ import { isAgentPlatformEnabled } from "@/lib/feature-flags";
 import { CreateAgentForm } from "./create-agent-form";
 import { AgentControls } from "./agent-controls";
 import { AgentRowKey } from "./agent-row-key";
+import { FirstAgentEmptyState } from "@/components/first-agent-empty-state";
 
 /** Decrypts a stored agent key for display; a missing or unreadable seal yields null so the row still renders. */
 function revealAgentKey(sealed: string | null): string | null {
@@ -197,7 +198,7 @@ export default async function AgentsSettingsPage() {
               href="/llms.txt"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-teal-300 bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-50 transition"
+              className="rounded-lg border border-teal-300 bg-card px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-50 transition"
             >
               /llms.txt ↗
             </a>
@@ -213,7 +214,7 @@ export default async function AgentsSettingsPage() {
       </div>
 
       {!tenantId ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-card p-6 text-sm text-slate-600">
           <p>
             You aren&apos;t in a workspace yet, so you can&apos;t register agents. Join a workspace via an invite from your team, or create your own workspace to start managing agents.
           </p>
@@ -228,7 +229,7 @@ export default async function AgentsSettingsPage() {
         </div>
       ) : (
         <>
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-labelledby="register-heading">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 sm:p-6" aria-labelledby="register-heading">
             <h2 id="register-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Add an agent
             </h2>
@@ -239,10 +240,10 @@ export default async function AgentsSettingsPage() {
               </Link>
               .
             </p>
-            <CreateAgentForm projects={projects} activeProjectId={context.activeProjectId} />
+            <CreateAgentForm projects={projects} activeProjectId={context.activeProjectId} levels={ownLevels} />
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-labelledby="mine-heading">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 sm:p-6" aria-labelledby="mine-heading">
             <h2 id="mine-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Your agents
             </h2>
@@ -250,9 +251,7 @@ export default async function AgentsSettingsPage() {
               Each agent has its own key. Copy sends that key and this site to that agent only.
             </p>
             {mine.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-600">
-                No agents yet. Register one under “Add an agent”, or approve an agent that asked at the approval page.
-              </p>
+              <FirstAgentEmptyState />
             ) : (
               <ul className="mt-3 divide-y divide-slate-100">
                 {mine.map((agent) => (
@@ -339,7 +338,7 @@ export default async function AgentsSettingsPage() {
             )}
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-labelledby="team-heading">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 sm:p-6" aria-labelledby="team-heading">
             <h2 id="team-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Team
             </h2>
@@ -399,7 +398,7 @@ export default async function AgentsSettingsPage() {
             </ul>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-labelledby="levels-heading">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 sm:p-6" aria-labelledby="levels-heading">
             <h2 id="levels-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Levels
             </h2>

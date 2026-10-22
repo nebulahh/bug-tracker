@@ -5,7 +5,7 @@ import { audit } from "@/lib/agents/audit";
 import { reviewerConflict, reviewerCreditConflict, type ReviewedBug } from "@/lib/agents/independence";
 import { hasLevel } from "@/lib/agents/levels";
 import type { AgentContext } from "@/lib/agents/require-agent";
-import { award } from "@/lib/points/award";
+import { award, type PointAward } from "@/lib/points/award";
 import { confirmationReviewerSourceKey, CONFIRMATION_REVIEWER_POINTS, DUPLICATE_MARKER_POINTS, duplicateMarkerSourceKey, pointSourceKey, reviewerPointsAt, TRIAGER_CLEAR_POINTS, triagerClearSourceKey } from "@/lib/points/rules";
 import {
   calculateReporterPoints,
@@ -103,6 +103,7 @@ type OptionalDbDelegates = {
     count?: (args: unknown) => Promise<number>;
   };
   bug?: { findUnique?: (args: unknown) => Promise<unknown> };
+  agentAuditEvent?: { findMany?: (args: unknown) => Promise<unknown[]> };
 };
 
 /** What the independence rule and the confirmation count need about an issue. */
@@ -196,6 +197,7 @@ async function countedConfirmationReviewers(
     // make an earlier reviewer no longer independent.
     if (agent.id === bug.createdByAgentId) continue;
     if (reviewerConflict({ id: agent.id, ownerUserId: agent.ownerUserId }, reviewed)) continue;
+    if (reviewerCreditConflict(onBehalfOfUserId, reviewed)) continue;
     // An undone validation no longer counts toward confirming the issue.
     if (undone.has(id)) continue;
     if (owners.has(agent.ownerUserId)) continue;
@@ -234,19 +236,22 @@ async function isTriageCleared(db: Db, bug: LoadedBug): Promise<boolean> {
     select: {
       id: true,
       agentId: true,
+      onBehalfOfUserId: true,
       agent: { select: { id: true, ownerUserId: true, level: true } },
     },
   });
   if (clears.length === 0) return false;
   const undone = await undoneValidationIds(db, bug);
   const reviewed: ReviewedBug = bug;
-  for (const { id, agent } of clears as Array<{
+  for (const { id, onBehalfOfUserId, agent } of clears as Array<{
     id: string;
+    onBehalfOfUserId: string;
     agent: { id: string; ownerUserId: string; level: string };
   }>) {
     if (agent.id === bug.createdByAgentId) continue;
-    if (agent.level !== "triager") continue;
+    if (!hasLevel(agent.level as AgentContext["level"], "triager")) continue;
     if (reviewerConflict({ id: agent.id, ownerUserId: agent.ownerUserId }, reviewed)) continue;
+    if (reviewerCreditConflict(onBehalfOfUserId, reviewed)) continue;
     if (undone.has(id)) continue;
     return true;
   }
@@ -286,6 +291,99 @@ async function isDuplicate(db: Db, bug: LoadedBug): Promise<boolean> {
     },
   });
   return accepted > 0;
+}
+
+/**
+ * The point awards a bug's standing validations earn (#539): the same
+ * reviewer-confirm, triager-clear and duplicate-marker entries the submit
+ * route writes, recomputed so the backfill can pay validations that landed
+ * before the award code did. `award()`'s sourceKey makes a repeat a no-op.
+ */
+export async function standingValidationAwards(db: Db, bugId: string): Promise<PointAward[]> {
+  const dbDelegates = db as unknown as OptionalDbDelegates;
+  if (
+    !dbDelegates.bug?.findUnique ||
+    !dbDelegates.issueValidation?.findMany ||
+    !dbDelegates.agentAuditEvent?.findMany
+  ) {
+    return [];
+  }
+  const bug = await db.bug.findUnique({ where: { id: bugId }, select: reviewedBugSelect });
+  if (!bug) return [];
+
+  const entries: PointAward[] = [];
+
+  // Confirming reviewers are skipped entirely once a duplicate marker stands,
+  // exactly as at submit time.
+  if (!(await isDuplicate(db, bug))) {
+    const reviewers = await countedConfirmationReviewers(db, bug);
+    reviewers.forEach((userId, index) => {
+      entries.push({
+        tenantId: bug.tenantId,
+        userId,
+        bugId,
+        role: "reviewer",
+        points: reviewerPointsAt(index, CONFIRMATION_REVIEWER_POINTS),
+        sourceKey: confirmationReviewerSourceKey(bugId, userId),
+      });
+    });
+  }
+
+  const latestRevision = await latestRevisionAt(db, bug);
+  const undone = await undoneValidationIds(db, bug);
+  const reviewed: ReviewedBug = bug;
+  const verdicts = await db.issueValidation.findMany({
+    where: {
+      bugId,
+      kind: "duplicate",
+      ...(latestRevision ? { createdAt: { gt: latestRevision } } : {}),
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      verdict: true,
+      onBehalfOfUserId: true,
+      agent: { select: { id: true, ownerUserId: true, level: true } },
+    },
+  });
+
+  // Each independent person earns once per verdict, as the submit-time award
+  // keys do: a reject clears (triager permission required), an accept marks.
+  const seen = new Set<string>();
+  for (const v of verdicts as Array<{
+    id: string;
+    verdict: string;
+    onBehalfOfUserId: string;
+    agent: { id: string; ownerUserId: string; level: string };
+  }>) {
+    if (undone.has(v.id)) continue;
+    if (v.agent.id === bug.createdByAgentId) continue;
+    if (reviewerConflict({ id: v.agent.id, ownerUserId: v.agent.ownerUserId }, reviewed)) continue;
+    const key = `${v.verdict}:${v.onBehalfOfUserId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (v.verdict === "reject" && hasLevel(v.agent.level as AgentContext["level"], "triager")) {
+      entries.push({
+        tenantId: bug.tenantId,
+        userId: v.onBehalfOfUserId,
+        bugId,
+        role: "triager",
+        points: TRIAGER_CLEAR_POINTS,
+        sourceKey: triagerClearSourceKey(bugId, v.onBehalfOfUserId),
+      });
+    } else if (v.verdict === "accept") {
+      entries.push({
+        tenantId: bug.tenantId,
+        userId: v.onBehalfOfUserId,
+        bugId,
+        role: "triager",
+        points: DUPLICATE_MARKER_POINTS,
+        sourceKey: duplicateMarkerSourceKey(bugId, v.onBehalfOfUserId),
+      });
+    }
+  }
+
+  return entries;
 }
 
 export type SubmitValidationResult =
@@ -338,8 +436,8 @@ export async function submitValidation(
       error: "insufficient_level",
       message:
         required === "triager"
-          ? "Only triager-level agents or higher can submit duplicate verdicts."
-          : "Only reviewer or merger agents can validate issues.",
+          ? "Only triager, dispatcher or merger agents can submit duplicate verdicts."
+          : "Only reviewer, dispatcher or merger agents can validate issues.",
     };
   }
 
@@ -454,9 +552,9 @@ export async function submitValidation(
       const duplicate = await isDuplicate(tx, bug);
       if (body.kind === "duplicate") {
         // The duplicate pass pays its own role (#428): 1 for clearing a report
-        // as not a duplicate (triager level only), 5 for marking a real one.
+        // as not a duplicate (triage permission required), 5 for marking a real one.
         const sourceKey =
-          body.verdict === "reject" && agent.level === "triager"
+          body.verdict === "reject" && hasLevel(agent.level, "triager")
             ? triagerClearSourceKey(bug.id, onBehalfOfUserId)
             : body.verdict === "accept"
               ? duplicateMarkerSourceKey(bug.id, onBehalfOfUserId)

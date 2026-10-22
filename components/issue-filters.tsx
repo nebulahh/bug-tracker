@@ -476,7 +476,7 @@ export function IssueFilters({
                 id={listId}
                 role="listbox"
                 aria-label="Search suggestions"
-                className="absolute left-0 right-0 z-20 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg"
+                className="absolute left-0 right-0 z-20 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-card py-1 text-sm shadow-lg"
               >
                 {suggestions.map((suggestion, index) => (
                   // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -559,7 +559,7 @@ export function IssueFilters({
             className={`inline-flex h-[38px] items-center gap-1.5 rounded-lg border px-3 text-sm font-medium shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 ${
               activeFilterCount > 0 || filterOpen
                 ? "border-teal-600 bg-teal-50 text-teal-900 hover:bg-teal-100"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                : "border-slate-300 bg-card text-slate-700 hover:bg-slate-50"
             }`}
           >
             <svg
@@ -605,7 +605,7 @@ export function IssueFilters({
               id={filterPanelId}
               role="dialog"
               aria-label="Filter issues"
-              className="absolute right-0 z-30 mt-2 w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-xl ring-1 ring-black/5"
+              className="absolute right-0 z-30 mt-2 w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-slate-200 bg-card p-4 shadow-xl ring-1 ring-black/5"
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
@@ -635,7 +635,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="mine"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={currentMine === "reported" ? "created" : currentMine}
                     onChange={(event) => update("mine", event.target.value)}
                   >
@@ -655,7 +655,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="stage"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={currentStage}
                     onChange={(event) => update(STAGE_PARAM, event.target.value)}
                   >
@@ -675,7 +675,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="status"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={params.get("status") ?? ""}
                     onChange={(event) => update("status", event.target.value)}
                   >
@@ -698,7 +698,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="severity"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={params.get("severity") ?? ""}
                     onChange={(event) => update("severity", event.target.value)}
                   >
@@ -718,7 +718,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="category"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={selectedNames[0] ?? ""}
                     onChange={(event) => update(TAGS_PARAM, serializeTags([event.target.value]))}
                   >
@@ -749,7 +749,7 @@ export function IssueFilters({
                     </label>
                     <select
                       id="platform"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                       value={currentPlatform}
                       onChange={(event) => update(PLATFORM_PARAM, event.target.value)}
                     >
@@ -772,7 +772,7 @@ export function IssueFilters({
                     </label>
                     <select
                       id="area"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                       value={currentArea}
                       onChange={(event) => update(AREA_PARAM, event.target.value)}
                     >
@@ -791,7 +791,7 @@ export function IssueFilters({
                     </label>
                     <select
                       id="milestone"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                       value={milestoneValue}
                       onChange={(event) => update(MILESTONE_PARAM, event.target.value)}
                     >
@@ -814,7 +814,7 @@ export function IssueFilters({
                   </label>
                   <select
                     id="sort"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                     value={currentSort}
                     onChange={(event) => update("sort", event.target.value)}
                   >
@@ -1013,7 +1013,7 @@ export function IssueFilters({
           <button
             type="button"
             onClick={clearAllFilters}
-            className="ml-auto rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="ml-auto rounded-lg border border-slate-300 bg-card px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             Clear all filters
           </button>
