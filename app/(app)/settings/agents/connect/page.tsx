@@ -7,14 +7,24 @@ import { getSiteUrl } from "@/lib/site-url";
 import { isAgentPlatformEnabled } from "@/lib/feature-flags";
 import { getAgentTemplates } from "@/lib/agents/templates";
 import { ConnectAgentView } from "./connect-agent-view";
+import { findPendingPairing } from "@/lib/agents/pairing";
+import { AGENT_INSTRUCTIONS_MAX } from "@/lib/agent-messages";
+import { PairForm } from "./pair-form";
+import type { AgentProjectChoice } from "../create-agent-form";
+import type { AgentLevel } from "@prisma/client";
 
 export const metadata = { title: "Connect your agent" };
 
 /**
  * Connect your agent onboarding page (#610).
  * Ready-to-paste setups for Claude, ChatGPT, and Node/Python pollers.
+ * Also includes the pairing approval flow below the connect setup.
  */
-export default async function ConnectAgentPage() {
+export default async function ConnectAgentPage({
+  searchParams = Promise.resolve({}),
+}: {
+  searchParams?: Promise<{ code?: string | string[] }>;
+}) {
   const user = await requireUser();
 
   if (!isAgentPlatformEnabled()) {
@@ -59,6 +69,11 @@ export default async function ConnectAgentPage() {
       })
     : null;
 
+  // Check for a pending pairing code from the URL
+  const { code } = await searchParams;
+  const initialCode = typeof code === "string" ? code.slice(0, 20) : "";
+  const pending = initialCode ? await findPendingPairing(initialCode) : null;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-1">
@@ -94,14 +109,48 @@ export default async function ConnectAgentPage() {
           </div>
         </div>
       ) : (
-        <ConnectAgentView
-          templates={templates}
-          siteUrl={siteUrl}
-          projectId={projectId}
-          projectName={projectName}
-          initialConnected={Boolean(initialKey?.lastUsedAt)}
-          initialAgentName={initialKey?.agent?.name ?? null}
-        />
+        <>
+          <ConnectAgentView
+            templates={templates}
+            siteUrl={siteUrl}
+            projectId={projectId}
+            projectName={projectName}
+            initialConnected={Boolean(initialKey?.lastUsedAt)}
+            initialAgentName={initialKey?.agent?.name ?? null}
+          />
+
+          {/* Pairing approval section — merged from /settings/agents/pair (#628) */}
+          <section className="rounded-xl border border-slate-200 bg-card p-4 sm:p-6">
+            <div className="space-y-1">
+              <Link
+                href="/settings/agents"
+                className="text-sm text-teal-700 hover:underline"
+              >
+                ← Back to agents
+              </Link>
+              <h2 className="text-xl font-semibold text-slate-900">
+                Approve a pending agent
+              </h2>
+            </div>
+            <PairForm
+              initialCode={initialCode}
+              pending={
+                pending
+                  ? {
+                      name: pending.proposedName,
+                      model: pending.proposedModel,
+                      level: pending.proposedLevel as AgentLevel | null,
+                      instructions: pending.proposedInstructions,
+                    }
+                  : null
+              }
+              unknownCode={Boolean(initialCode) && !pending}
+              projects={context.projects as AgentProjectChoice[]}
+              activeProjectId={projectId}
+              instructionsMaxLength={AGENT_INSTRUCTIONS_MAX}
+            />
+          </section>
+        </>
       )}
     </div>
   );
