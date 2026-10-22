@@ -11,7 +11,6 @@ import { isOfferExpired } from "@/lib/agent-api/offer";
 import { assertRedesignOpen } from "@/lib/redesigns";
 import { deliveryDeadline, deliveryWindowMinutes } from "@/lib/claim-deadline";
 import { assigneeChangedSummary, statusChangedSummary } from "@/lib/activity-log";
-import { ensureWatching } from "@/lib/watch";
 import type { AppRole } from "@/lib/roles";
 
 export const BID_NOTE_MAX = 280;
@@ -245,7 +244,6 @@ export async function awardBid(actor: Actor, bidId: string) {
           },
         ],
       });
-      await ensureWatching(tx, fresh.bugId, [fresh.beneficiaryUserId]);
       await publish(tx, {
         tenantId: fresh.bug.tenantId,
         type: "issue.bid_awarded",
