@@ -513,8 +513,9 @@ describe("confirmation: the two-reviewer rule (#433)", () => {
     // Issue was edited at tEdit (after t0)
     db.bugRevision.findFirst.mockResolvedValue({ editedAt: tEdit });
 
-    // The replacement report is NOT confirmed because validations are for previous content
-    expect(await isConfirmed("bug1")).toBe(false);
+    // Pre-edit validations still count before confirmation (#525): the edit does
+    // not invalidate validations submitted before the issue was confirmed.
+    expect(await isConfirmed("bug1")).toBe(true);
 
     // When reviewers validate the new report after the edit, it confirms again
     state.validations.push(
