@@ -480,12 +480,19 @@ export async function updateBugAction(
       actorRole: user.role,
       membershipRole: access.membershipRole,
       currentAssigneeId: existing.assigneeId,
+      reporterId: existing.reporterId,
+      confirmed: existing.confirmed,
     })
   ) {
     return { error: TICKET_TRIAGE_ERRORS.statusUnauthorized };
   }
 
-  if (!admin && !isAssignee && !isSelfAssigning) {
+  if (
+    !admin &&
+    !isAssignee &&
+    !isSelfAssigning &&
+    !(existing.reporterId === userId && !existing.confirmed && !existing.assigneeId)
+  ) {
     return {
       error: "Only the assignee, or an owner or admin of this organization, can update this issue",
     };

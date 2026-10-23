@@ -12,6 +12,8 @@ export type CanChangeTicketStatusParams = {
   actorRole?: AppRole | null;
   membershipRole?: MembershipRole | null;
   currentAssigneeId?: string | null;
+  reporterId?: string | null;
+  confirmed?: boolean | null;
 };
 
 /**
@@ -19,6 +21,9 @@ export type CanChangeTicketStatusParams = {
  *
  * Allowed: the issue's assignee of record, or an owner / admin of its organization.
  * The site super admin counts. A site-wide admin who is only a member does not.
+ *
+ * Additionally, the reporter of an unconfirmed, unassigned issue may change its
+ * status (e.g. to close it as invalid), since no one else can act on it yet.
  *
  * Note that this is deliberately evaluated against `currentAssigneeId` - the
  * assignee the issue has *now* - and never against the assignee the request is
@@ -30,8 +35,13 @@ export function canChangeTicketStatus({
   actorRole,
   membershipRole,
   currentAssigneeId,
+  reporterId,
+  confirmed,
 }: CanChangeTicketStatusParams): boolean {
   if (!actorId) return false;
   if (isOrganizationAdmin(membershipRole, actorRole)) return true;
-  return Boolean(currentAssigneeId && actorId === currentAssigneeId);
+  if (currentAssigneeId && actorId === currentAssigneeId) return true;
+  // Reporter can close their own unconfirmed, unassigned issue (#649).
+  if (!currentAssigneeId && !confirmed && reporterId && actorId === reporterId) return true;
+  return false;
 }
