@@ -9,7 +9,7 @@ import { getAgentTemplates } from "@/lib/agents/templates";
 import { ConnectAgentView } from "./connect-agent-view";
 import { findPendingPairing } from "@/lib/agents/pairing";
 import { AGENT_INSTRUCTIONS_MAX } from "@/lib/agent-messages";
-import { PairForm } from "./pair-form";
+import { PairForm } from "../pair/pair-form";
 import type { AgentProjectChoice } from "../create-agent-form";
 import type { AgentLevel } from "@prisma/client";
 
@@ -24,7 +24,7 @@ export default async function ConnectAgentPage({
   searchParams = Promise.resolve({}),
 }: {
   searchParams?: Promise<{ code?: string | string[] }>;
-}) {
+} = {}) {
   const user = await requireUser();
 
   if (!isAgentPlatformEnabled()) {
