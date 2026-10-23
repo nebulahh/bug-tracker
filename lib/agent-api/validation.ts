@@ -178,9 +178,9 @@ async function staleValidationOf(
  * People credited for accepts of kind `real` that still count, oldest first.
  * One per owner: a second agent of the same person does not add a credit.
  */
-async function countedConfirmationReviewers(db: Db, bug: LoadedBug): Promise<string[]> {
+async function countedConfirmationReviewers(db: Db, bug: LoadedBug, alreadyConfirmed: boolean): Promise<string[]> {
   const dbDelegates = db as unknown as OptionalDbDelegates;
-  const latestRevision = await latestRevisionAt(db, bug);
+  const latestRevision = alreadyConfirmed ? await latestRevisionAt(db, bug) : null;
 
   if (!dbDelegates.issueValidation?.findMany) return [];
 
@@ -220,7 +220,7 @@ async function countedConfirmationReviewers(db: Db, bug: LoadedBug): Promise<str
 
 /** Accepts of kind `real` that count toward confirming `bug`. */
 async function countedConfirmations(db: Db, bug: LoadedBug): Promise<number> {
-  return (await countedConfirmationReviewers(db, bug)).length;
+  return (await countedConfirmationReviewers(db, bug, false)).length;
 }
 
 /**
@@ -324,7 +324,7 @@ export async function standingValidationAwards(db: Db, bugId: string): Promise<P
   // Confirming reviewers are skipped entirely once a duplicate marker stands,
   // exactly as at submit time.
   if (!(await isDuplicate(db, bug))) {
-    const reviewers = await countedConfirmationReviewers(db, bug);
+    const reviewers = await countedConfirmationReviewers(db, bug, false);
     reviewers.forEach((userId, index) => {
       entries.push({
         tenantId: bug.tenantId,
@@ -588,7 +588,7 @@ export async function submitValidation(
         }
       }
       if (body.kind === "real" && body.verdict === "accept" && !duplicate) {
-        const reviewers = await countedConfirmationReviewers(tx, bug);
+        const reviewers = await countedConfirmationReviewers(tx, bug, false);
         const index = reviewers.indexOf(onBehalfOfUserId);
         if (index >= 0) {
           await award(tx, {
