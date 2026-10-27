@@ -138,6 +138,20 @@ function NewIssueButton({ className = "" }: { className?: string }) {
   );
 }
 
+/** New draft idea as a 32px + button. */
+function NewDraftIdeaButton({ className = "" }: { className?: string }) {
+  return (
+    <Link
+      href="/ideas/new"
+      title="New draft idea"
+      className={`inline-flex w-8 items-center justify-center rounded-lg border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip ${className}`}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 100 18 9 9 0 000-18z" /></svg>
+      <span className="sr-only">New draft idea</span>
+    </Link>
+  );
+}
+
 /** A bug with head, antennae, segmented body and three pairs of legs. */
 const BUG_ICON_PATH =
   "m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4";
@@ -785,7 +799,12 @@ export default async function BugsPage({
             trailing={isFirstRun ? null : (
               <>
                 {/* Desktop: New issue is a + just left of the platform menu, which stays rightmost. */}
-                {!isDeletedView ? <NewIssueButton className="max-md:hidden" /> : null}
+                {!isDeletedView ? (
+                  <>
+                    <NewIssueButton className="max-md:hidden" />
+                    <NewDraftIdeaButton className="max-md:hidden" />
+                  </>
+                ) : null}
                 <PlatformMenu
                   compact
                   tabs={platformTabs.map((tab) => ({ ...tab, href: platformHref(tab.id) }))}
@@ -813,7 +832,12 @@ export default async function BugsPage({
           />
           {/* Phones: the + beside the title, since the tools row is collapsed there.
               Desktop uses the one in the tools row, unless that row has no platform menu yet. */}
-          {!isDeletedView ? <NewIssueButton className={isFirstRun ? "" : "md:hidden"} /> : null}
+          {!isDeletedView ? (
+            <>
+              <NewIssueButton className={isFirstRun ? "" : "md:hidden"} />
+              <NewDraftIdeaButton className={isFirstRun ? "" : "md:hidden"} />
+            </>
+          ) : null}
         </div>
       </div>
 
