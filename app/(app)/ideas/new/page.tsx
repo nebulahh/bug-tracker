@@ -95,9 +95,12 @@ function NewDraftIdeaForm({ projects }: { projects: ProjectOption[] }) {
         <input name="projectId" type="hidden" value="" />
       )}
       <div className="flex items-end gap-3 pt-2">
-        <Button type="button" asChild variant="outline">
-          <Link href="/issues">Cancel</Link>
-        </Button>
+        <Link
+          href="/issues"
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-zk-border bg-zk-surface px-4 py-2 text-sm font-medium text-zk-text hover:bg-zk-chip transition-colors"
+        >
+          Cancel
+        </Link>
         <Button type="submit">Create draft idea</Button>
       </div>
     </form>
