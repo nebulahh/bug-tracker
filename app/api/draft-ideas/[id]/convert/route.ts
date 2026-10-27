@@ -92,7 +92,7 @@ export async function POST(
   }
 
   // Determine project: use the provided one, fall back to the draft idea's project.
-  let targetProjectId = parsed.data.projectId ?? draftIdea.projectId;
+  const targetProjectId = parsed.data.projectId ?? draftIdea.projectId;
 
   if (targetProjectId) {
     const project = await prisma.project.findUnique({

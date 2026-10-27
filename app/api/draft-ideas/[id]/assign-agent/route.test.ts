@@ -22,7 +22,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 const { POST, GET, PUT, PATCH, DELETE, OPTIONS } = await import("./route");
 
-function requestWithId(id: string, body: unknown): Request {
+function requestWithId(id: string, body: unknown): NextRequest {
   return new NextRequest(`http://localhost/api/draft-ideas/${id}/assign-agent`, {
     method: "POST",
     body: JSON.stringify(body),

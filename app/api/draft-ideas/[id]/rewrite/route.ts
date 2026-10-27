@@ -4,7 +4,7 @@ import { agentErrorResponse } from "@/lib/agents/require-agent";
 import { requireLevel } from "@/lib/agents/levels";
 import { audit } from "@/lib/agents/audit";
 import { consumeAgentBudget } from "@/lib/agents/rate-budget";
-import { withAgentBudgetHeaders, type AgentBudgetQuota } from "@/lib/agents/rate-budget-headers";
+import { withAgentBudgetHeaders } from "@/lib/agents/rate-budget-headers";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -36,8 +36,10 @@ export async function POST(
   const tenantId = agent.tenantId;
 
   // Charge agent budget for this write operation.
-  const quota: AgentBudgetQuota = { kind: "write", cost: 1 };
-  const budget = await consumeAgentBudget(agent, "write");
+  const budget = await consumeAgentBudget(
+    { id: agent.agentId, burst: agent.burst, burstUntil: agent.burstUntil },
+    "write",
+  );
 
   const { id } = await context.params;
 
@@ -65,6 +67,7 @@ export async function POST(
       status: true,
       title: true,
       description: true,
+      projectId: true,
       assignedAgentId: true,
       convertedToBugId: true,
     },

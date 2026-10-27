@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 const authMock = vi.hoisted(() => vi.fn());
@@ -24,7 +24,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = await import("./route");
 
-function requestWithId(id: string): Request {
+function requestWithId(id: string): NextRequest {
   return new NextRequest(`http://localhost/api/draft-ideas/${id}/duplicate-check`);
 }
 
@@ -129,23 +129,23 @@ describe("GET /api/draft-ideas/[id]/duplicate-check", () => {
 
 describe("unsupported methods on /api/draft-ideas/[id]/duplicate-check", () => {
   it("returns 405 for POST", async () => {
-    const response = POST(requestWithId("di-1"));
+    const response = POST();
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("GET, OPTIONS");
   });
 
   it("returns 405 for PUT", async () => {
-    const response = PUT(requestWithId("di-1"));
+    const response = PUT();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for PATCH", async () => {
-    const response = PATCH(requestWithId("di-1"));
+    const response = PATCH();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for DELETE", async () => {
-    const response = DELETE(requestWithId("di-1"));
+    const response = DELETE();
     expect(response.status).toBe(405);
   });
 

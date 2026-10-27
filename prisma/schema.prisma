@@ -351,6 +351,7 @@ model Bug {
   /// If this issue was created from an accepted draft idea, links back to the source.
   sourceDraftIdeaId String?
   sourceDraftIdea   DraftIdea? @relation("SourceDraftIdea", fields: [sourceDraftIdeaId], references: [id], onDelete: SetNull)
+  convertedFromDraftIdeas DraftIdea[] @relation("ConvertedFromDraftIdea")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   reporter          User               @relation("BugReporter", fields: [reporterId], references: [id])
@@ -568,6 +569,10 @@ model DraftIdea {
   @@index([status, createdAt])
 
   comments          DraftIdeaComment[]
+  /// Issues created from this draft idea (opposite of Bug.sourceDraftIdea).
+  sourceBugs        Bug[]              @relation("SourceDraftIdea")
+  /// Comments on other draft ideas that cite this idea as the duplicate.
+  duplicateComments DraftIdeaComment[] @relation("DraftIdeaDuplicates")
 }
 
 /// A comment on a draft idea (#700). Agents comment on draft ideas to explain
@@ -976,7 +981,6 @@ model Agent {
   createdBugs          Bug[]                 @relation("AgentCreatedBugs")
   comments             Comment[]
   draftIdeaComments    DraftIdeaComment[]
-  draftIdeaCommentVotes DraftIdeaCommentVote[]
   assignedDraftIdeas   DraftIdea[]           @relation("AssignedDraftIdea")
   claims               IssueClaim[]
   bids                 IssueBid[]

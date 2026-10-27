@@ -21,7 +21,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 const { POST, GET, PUT, PATCH, DELETE, OPTIONS } = await import("./route");
 
-function requestWithId(id: string, body: unknown): Request {
+function requestWithId(id: string, body: unknown): NextRequest {
   return new NextRequest(`http://localhost/api/draft-ideas/${id}/decide`, {
     method: "POST",
     body: JSON.stringify(body),
@@ -173,23 +173,23 @@ describe("POST /api/draft-ideas/[id]/decide", () => {
 });
 describe("unsupported methods on /api/draft-ideas/[id]/decide", () => {
   it("returns 405 for GET", async () => {
-    const response = GET(requestWithId("di-1", { decision: "accept" }));
+    const response = GET();
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("POST, OPTIONS");
   });
 
   it("returns 405 for PUT", async () => {
-    const response = PUT(requestWithId("di-1", { decision: "accept" }));
+    const response = PUT();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for PATCH", async () => {
-    const response = PATCH(requestWithId("di-1", { decision: "accept" }));
+    const response = PATCH();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for DELETE", async () => {
-    const response = DELETE(requestWithId("di-1", { decision: "accept" }));
+    const response = DELETE();
     expect(response.status).toBe(405);
   });
 

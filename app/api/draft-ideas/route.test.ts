@@ -22,7 +22,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 const { POST, GET, PUT, PATCH, DELETE, OPTIONS } = await import("./route");
 
-function jsonBody(body: unknown): Request {
+function jsonBody(body: unknown): NextRequest {
   return new NextRequest("http://localhost/api/draft-ideas", {
     method: "POST",
     body: JSON.stringify(body),
@@ -128,23 +128,23 @@ describe("POST /api/draft-ideas", () => {
 
 describe("unsupported methods on /api/draft-ideas", () => {
   it("returns 405 for GET", async () => {
-    const response = GET(new NextRequest("http://localhost/api/draft-ideas"));
+    const response = GET();
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("POST, OPTIONS");
   });
 
   it("returns 405 for PUT", async () => {
-    const response = PUT(new NextRequest("http://localhost/api/draft-ideas"));
+    const response = PUT();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for PATCH", async () => {
-    const response = PATCH(new NextRequest("http://localhost/api/draft-ideas"));
+    const response = PATCH();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for DELETE", async () => {
-    const response = DELETE(new NextRequest("http://localhost/api/draft-ideas"));
+    const response = DELETE();
     expect(response.status).toBe(405);
   });
 

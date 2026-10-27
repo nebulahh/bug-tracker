@@ -36,7 +36,7 @@ CREATE INDEX "DraftIdeaComment_parentId_idx" ON "DraftIdeaComment"("parentId");
 CREATE INDEX "DraftIdeaCommentVote_commentId_idx" ON "DraftIdeaCommentVote"("commentId");
 
 -- CreateIndex
-CREATE INDEX "DraftIdeaCommentVote_commentId_userId_idx" ON "DraftIdeaCommentVote"("commentId", "userId") UNIQUE;
+CREATE UNIQUE INDEX "DraftIdeaCommentVote_commentId_userId_idx" ON "DraftIdeaCommentVote"("commentId", "userId");
 
 -- AddForeignKey
 ALTER TABLE "DraftIdeaComment" ADD CONSTRAINT "DraftIdeaComment_draftIdeaId_fkey" FOREIGN KEY ("draftIdeaId") REFERENCES "DraftIdea"("id") ON DELETE CASCADE ON UPDATE CASCADE;

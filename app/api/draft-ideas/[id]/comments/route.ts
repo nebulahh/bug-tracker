@@ -155,7 +155,7 @@ export async function POST(
       duplicateOfId: true,
       duplicateReason: true,
       createdAt: true,
-      updatedAt: true,
+      editedAt: true,
     },
   });
 

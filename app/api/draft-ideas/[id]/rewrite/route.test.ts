@@ -19,7 +19,7 @@ vi.mock("@/lib/agents/rate-budget", () => ({
 
 const { POST, GET, PUT, PATCH, DELETE, OPTIONS } = await import("./route");
 
-function requestWithId(id: string, body: unknown, key = true): Request {
+function requestWithId(id: string, body: unknown, key = true): NextRequest {
   return new NextRequest(`http://localhost/api/draft-ideas/${id}/rewrite`, {
     method: "POST",
     headers: { ...(key ? { authorization: "Bearer ziki_test-key" } : {}), "content-type": "application/json" },
@@ -46,7 +46,7 @@ beforeEach(() => {
   budget.mockResolvedValue({ allowed: true, kind: "write", limit: 30, windowSeconds: 3600 });
   db.rateLimitHit.create.mockResolvedValue({ id: "rl-1" });
   db.agentAuditEvent.create.mockResolvedValue({ id: "audit-1" });
-  db.$transaction = async (callback) => callback(db);
+  db.$transaction.mockImplementation((run: (tx: typeof db) => unknown) => run(db));
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -226,23 +226,23 @@ describe("unsupported methods on /api/draft-ideas/[id]/rewrite", () => {
   const context = { params: Promise.resolve({ id: "di-1" }) };
 
   it("returns 405 for GET", async () => {
-    const response = GET(requestWithId("di-1", {}, true), context);
+    const response = GET();
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("POST, OPTIONS");
   });
 
   it("returns 405 for PUT", async () => {
-    const response = PUT(requestWithId("di-1", {}, true), context);
+    const response = PUT();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for PATCH", async () => {
-    const response = PATCH(requestWithId("di-1", {}, true), context);
+    const response = PATCH();
     expect(response.status).toBe(405);
   });
 
   it("returns 405 for DELETE", async () => {
-    const response = DELETE(requestWithId("di-1", {}, true), context);
+    const response = DELETE();
     expect(response.status).toBe(405);
   });
 
