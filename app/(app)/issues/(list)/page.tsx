@@ -144,7 +144,7 @@ function NewDraftIdeaButton({ className = "" }: { className?: string }) {
     <Link
       href="/ideas/new"
       title="New draft idea"
-      className={`inline-flex w-8 items-center justify-center rounded-lg border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip ${className}`}
+      className={`inline-flex w-8 h-8 items-center justify-center rounded-lg border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip ${className}`}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 100 18 9 9 0 000-18z" /></svg>
       <span className="sr-only">New draft idea</span>
