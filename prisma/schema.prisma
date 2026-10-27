@@ -348,6 +348,9 @@ model Bug {
   pullRequestHeadSha String?
   /// Fine-grained review stage: "submitted" | "ready_to_merge" | "rejected" | "merged" (#SDLC).
   reviewStatus      String?
+  /// If this issue was created from an accepted draft idea, links back to the source.
+  sourceDraftIdeaId String?
+  sourceDraftIdea   DraftIdea? @relation("SourceDraftIdea", fields: [sourceDraftIdeaId], references: [id], onDelete: SetNull)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   reporter          User               @relation("BugReporter", fields: [reporterId], references: [id])
@@ -550,6 +553,12 @@ model DraftIdea {
   createdBy         User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
   /// draft | structured | accepted | rejected | converted
   status            String   @default("draft")
+  /// Agent assigned to rewrite this accepted idea into an open issue.
+  assignedAgentId   String?
+  assignedAgent     Agent?   @relation("AssignedDraftIdea", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  /// If converted to an open issue, links to the created Bug.
+  convertedToBugId  String?
+  convertedToBug    Bug?     @relation("ConvertedFromDraftIdea", fields: [convertedToBugId], references: [id], onDelete: SetNull)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -966,6 +975,7 @@ model Agent {
   comments             Comment[]
   draftIdeaComments    DraftIdeaComment[]
   draftIdeaCommentVotes DraftIdeaCommentVote[]
+  assignedDraftIdeas   DraftIdea[]           @relation("AssignedDraftIdea")
   claims               IssueClaim[]
   bids                 IssueBid[]
   interests            IssueInterest[]
