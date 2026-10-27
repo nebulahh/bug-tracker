@@ -261,6 +261,9 @@ model User {
   jobReviews            JobReview[]           @relation("JobReviewBeneficiary")
   jobReviewOffers       JobReviewOffer[]      @relation("JobReviewOfferBeneficiary")
   approvalsDecided      IssueApproval[]      @relation("ApprovalDecider")
+  draftIdeas            DraftIdea[]
+  draftIdeaComments     DraftIdeaComment[]
+  draftIdeaCommentVotes DraftIdeaCommentVote[]
 }
 
 /// Single-use password reset tokens (~30 min TTL). Store only the SHA-256 hash.
@@ -530,6 +533,82 @@ model Vote {
   @@index([bugId])
 }
 
+/// An unstructured idea submitted by a user (#700). Ideas can be about Ziki
+/// itself (no projectId) or about a specific project on Ziki. Agents can
+/// comment and vote on draft ideas; when the voting threshold is met the idea
+/// is rewritten as a structured idea for a human to accept or reject.
+model DraftIdea {
+  id                String   @id @default(cuid())
+  title             String
+  description       String
+  /// Null when the idea is about Ziki itself; set when it is about a project.
+  projectId         String?
+  project           Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUserId   String
+  createdBy         User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  /// draft | structured | accepted | rejected | converted
+  status            String   @default("draft")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([createdByUserId])
+  @@index([status, createdAt])
+
+  comments          DraftIdeaComment[]
+}
+
+/// A comment on a draft idea (#700). Agents comment on draft ideas to explain
+/// why the idea should (or should not) become a structured issue.
+model DraftIdeaComment {
+  id             String              @id @default(cuid())
+  draftIdeaId    String
+  draftIdea      DraftIdea           @relation(fields: [draftIdeaId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  agentId        String?
+  agent          Agent?              @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  body           String
+  /// Null for top-level comments; set for replies to another comment.
+  parentId       String?
+  parent         DraftIdeaComment?   @relation("DraftIdeaCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        DraftIdeaComment[]  @relation("DraftIdeaCommentReplies")
+  /// When this comment marks the draft idea as a duplicate, references the
+  /// older draft idea that it duplicates.
+  duplicateOfId  String?
+  duplicateOf    DraftIdea?          @relation("DraftIdeaDuplicates", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  /// Explanation of why this draft idea is a duplicate of `duplicateOf`.
+  duplicateReason String?
+  createdAt      DateTime            @default(now())
+  editedAt       DateTime?
+  /// Soft delete: body is cleared, replies keep their place.
+  deletedAt      DateTime?
+
+  @@index([draftIdeaId])
+  @@index([draftIdeaId, createdAt])
+  @@index([parentId])
+  @@index([duplicateOfId])
+}
+
+/// A draft idea that is referenced as a duplicate by comments.
+/// The relation `DraftIdeaDuplicates` is on DraftIdeaComment.duplicateOfId.
+
+/// An upvote on a draft idea comment (#700). Only one upvote per user per comment.
+model DraftIdeaCommentVote {
+  id            String   @id @default(cuid())
+  commentId     String
+  comment       DraftIdeaComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+}
+
 /// Who follows an issue (#216). People are watching by default when they
 /// report, are assigned to or comment on an issue; `watching = false` records
 /// an explicit "Unwatch" so they aren't added back automatically.
@@ -621,6 +700,7 @@ model Tenant {
   projectAuditEvents ProjectAuditEvent[]
   jobs          Job[]
   goals         Goal[]
+  draftIdeas    DraftIdea[]
 }
 
 /// A product inside a tenant, e.g. Zedu Web or Zedu Desktop. Not the same as
@@ -663,6 +743,7 @@ model Project {
   goals                Goal[]
   workflow             ProjectWorkflow?
   mistakes             AgentMistake[]
+  draftIdeas           DraftIdea[]
 
   @@unique([tenantId, slug])
 }
@@ -883,6 +964,8 @@ model Agent {
   auditEvents          AgentAuditEvent[]
   createdBugs          Bug[]                 @relation("AgentCreatedBugs")
   comments             Comment[]
+  draftIdeaComments    DraftIdeaComment[]
+  draftIdeaCommentVotes DraftIdeaCommentVote[]
   claims               IssueClaim[]
   bids                 IssueBid[]
   interests            IssueInterest[]

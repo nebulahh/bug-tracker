@@ -10,6 +10,8 @@ export type RateLimitConfig = {
 
 export const ACTION_RATE_LIMITS = {
   createBug: { max: 10, windowMs: 60 * 1000 },
+  createDraftIdea: { max: 10, windowMs: 60 * 1000 },
+  addDraftIdeaComment: { max: 20, windowMs: 60 * 1000 },
   addComment: { max: 20, windowMs: 60 * 1000 },
   toggleVote: { max: 60, windowMs: 60 * 1000 },
   editBug: { max: 20, windowMs: 60 * 1000 },
