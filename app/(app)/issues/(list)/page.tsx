@@ -139,15 +139,15 @@ function NewIssueButton({ className = "" }: { className?: string }) {
 }
 
 /** New draft idea as a 32px + button. */
-function NewDraftIdeaButton({ className = "" }: { className?: string }) {
+/** A single "New idea" link placed next to the New issue button. */
+function NewDraftIdeaLink({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/ideas/new"
       title="New draft idea"
-      className={`inline-flex w-8 h-8 items-center justify-center rounded-lg border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip ${className}`}
+      className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-zk-border bg-zk-surface px-3 py-1 text-sm font-medium text-zk-text hover:bg-zk-chip transition-colors ${className}`}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 100 18 9 9 0 000-18z" /></svg>
-      <span className="sr-only">New draft idea</span>
+      New idea
     </Link>
   );
 }
@@ -802,7 +802,7 @@ export default async function BugsPage({
                 {!isDeletedView ? (
                   <>
                     <NewIssueButton className="max-md:hidden" />
-                    <NewDraftIdeaButton className="max-md:hidden" />
+                    <NewDraftIdeaLink className="max-md:hidden" />
                   </>
                 ) : null}
                 <PlatformMenu
@@ -835,7 +835,7 @@ export default async function BugsPage({
           {!isDeletedView ? (
             <>
               <NewIssueButton className={isFirstRun ? "" : "md:hidden"} />
-              <NewDraftIdeaButton className={isFirstRun ? "" : "md:hidden"} />
+              <NewDraftIdeaLink className={isFirstRun ? "" : "md:hidden"} />
             </>
           ) : null}
         </div>
