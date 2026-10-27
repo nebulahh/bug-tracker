@@ -1,7 +1,6 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
-import { currentTenantAccess } from "@/lib/tenant-access";
 import { currentTenantIdFor } from "@/lib/tenant-context";
 import { NewDraftIdeaForm } from "@/components/new-draft-idea-form";
 
@@ -24,7 +23,6 @@ async function loadProjects(tenantId: string | null): Promise<ProjectOption[]> {
 
 export default async function NewDraftIdeaPage() {
   const user = await requireUser();
-  const admin = (await currentTenantAccess(user.id, user.role)).admin;
   const tenantId = await currentTenantIdFor(user.id);
   const projects = await loadProjects(tenantId);
 
