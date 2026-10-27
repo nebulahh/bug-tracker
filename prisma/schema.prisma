@@ -585,6 +585,8 @@ model DraftIdeaComment {
   parentId       String?
   parent         DraftIdeaComment?   @relation("DraftIdeaCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies        DraftIdeaComment[]  @relation("DraftIdeaCommentReplies")
+  /// Votes on this comment (upvotes only).
+  votes          DraftIdeaCommentVote[]
   /// When this comment marks the draft idea as a duplicate, references the
   /// older draft idea that it duplicates.
   duplicateOfId  String?

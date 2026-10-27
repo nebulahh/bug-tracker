@@ -11,7 +11,8 @@ const PROMOTION_VOTE_THRESHOLD = 3;
 /** POST /api/draft-ideas/[id]/promote
  *
  * Promotes a draft idea to "structured" status when the comment upvote
- * threshold has been met. Only the idea's tenant members can promote.
+ * threshold has been met. Auto-assigns the agent with the most upvoted
+ * comment as the rewriting agent. Only the idea's tenant members can promote.
  *
  * Body: {}
  */
@@ -85,10 +86,34 @@ export async function POST(
     );
   }
 
-  // Promote to structured status.
+  // Auto-assign the agent with the most upvoted comment on this draft idea.
+  // The human who approves does not assign the rewriting agent.
+  const topComment = await prisma.draftIdeaComment.findFirst({
+    where: {
+      draftIdeaId: id,
+      agentId: { not: null },
+    },
+    include: {
+      _count: {
+        select: { votes: true },
+      },
+    },
+    orderBy: {
+      votes: {
+        _count: "desc",
+      },
+    },
+  });
+
+  const assignedAgentId = topComment?.agentId ?? null;
+
+  // Promote to structured status and auto-assign the rewriting agent.
   const promoted = await prisma.draftIdea.update({
     where: { id },
-    data: { status: "structured" },
+    data: {
+      status: "structured",
+      ...(assignedAgentId ? { assignedAgentId } : {}),
+    },
     select: {
       id: true,
       title: true,
@@ -97,6 +122,7 @@ export async function POST(
       tenantId: true,
       createdByUserId: true,
       status: true,
+      assignedAgentId: true,
       createdAt: true,
       updatedAt: true,
     },

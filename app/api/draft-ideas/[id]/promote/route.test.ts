@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+﻿import { describe, expect, it, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 const authMock = vi.hoisted(() => vi.fn());
@@ -11,6 +11,7 @@ const prismaMock = {
     update: vi.fn(),
   },
   draftIdeaCommentVote: { aggregate: vi.fn() },
+  draftIdeaComment: { findFirst: vi.fn() },
 };
 
 vi.mock("@/auth", () => ({ auth: authMock }));
@@ -95,7 +96,9 @@ describe("POST /api/draft-ideas/[id]/promote", () => {
     });
     const response = await POST(requestWithId("di-1"), { params: Promise.resolve({ id: "di-1" }) });
     expect(response.status).toBe(400);
-  });  it("returns 400 when votes below threshold", async () => {
+  });
+
+  it("returns 400 when votes below threshold", async () => {
     authMock.mockResolvedValue({ user: { id: "u1" } });
     requireUserMock.mockResolvedValue({ id: "u1", role: "user" });
     currentTenantIdForMock.mockResolvedValue("tenant-1");
@@ -123,6 +126,7 @@ describe("POST /api/draft-ideas/[id]/promote", () => {
       status: "draft",
     });
     prismaMock.draftIdeaCommentVote.aggregate.mockResolvedValue({ _count: { id: 3 } });
+    prismaMock.draftIdeaComment.findFirst.mockResolvedValue(null);
     prismaMock.draftIdea.update.mockResolvedValue({
       id: "di-1",
       title: "Draft title",
@@ -131,6 +135,7 @@ describe("POST /api/draft-ideas/[id]/promote", () => {
       tenantId: "tenant-1",
       createdByUserId: "u1",
       status: "structured",
+      assignedAgentId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -139,6 +144,84 @@ describe("POST /api/draft-ideas/[id]/promote", () => {
     expect(response.status).toBe(200);
     const json = await response.json();
     expect(json.status).toBe("structured");
+    expect(json.assignedAgentId).toBeNull();
+    expect(prismaMock.draftIdea.update).toHaveBeenCalledWith({
+      where: { id: "di-1" },
+      data: { status: "structured" },
+      select: expect.any(Object),
+    });
+  });
+
+  it("auto-assigns the agent with the most upvoted comment", async () => {
+    authMock.mockResolvedValue({ user: { id: "u1" } });
+    requireUserMock.mockResolvedValue({ id: "u1", role: "user" });
+    currentTenantIdForMock.mockResolvedValue("tenant-1");
+    prismaMock.draftIdea.findUnique.mockResolvedValue({
+      id: "di-1",
+      tenantId: "tenant-1",
+      status: "draft",
+    });
+    prismaMock.draftIdeaCommentVote.aggregate.mockResolvedValue({ _count: { id: 10 } });
+    prismaMock.draftIdeaComment.findFirst.mockResolvedValue({
+      id: "c-2",
+      draftIdeaId: "di-1",
+      agentId: "agent-a",
+      _count: { votes: 5 },
+    });
+    prismaMock.draftIdea.update.mockResolvedValue({
+      id: "di-1",
+      title: "Draft title",
+      description: "Draft description",
+      projectId: null,
+      tenantId: "tenant-1",
+      createdByUserId: "u1",
+      status: "structured",
+      assignedAgentId: "agent-a",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const response = await POST(requestWithId("di-1"), { params: Promise.resolve({ id: "di-1" }) });
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.status).toBe("structured");
+    expect(json.assignedAgentId).toBe("agent-a");
+    expect(prismaMock.draftIdea.update).toHaveBeenCalledWith({
+      where: { id: "di-1" },
+      data: { status: "structured", assignedAgentId: "agent-a" },
+      select: expect.any(Object),
+    });
+  });
+
+  it("does not assign agent when no comments have agents", async () => {
+    authMock.mockResolvedValue({ user: { id: "u1" } });
+    requireUserMock.mockResolvedValue({ id: "u1", role: "user" });
+    currentTenantIdForMock.mockResolvedValue("tenant-1");
+    prismaMock.draftIdea.findUnique.mockResolvedValue({
+      id: "di-1",
+      tenantId: "tenant-1",
+      status: "draft",
+    });
+    prismaMock.draftIdeaCommentVote.aggregate.mockResolvedValue({ _count: { id: 5 } });
+    prismaMock.draftIdeaComment.findFirst.mockResolvedValue(null);
+    prismaMock.draftIdea.update.mockResolvedValue({
+      id: "di-1",
+      title: "Draft title",
+      description: "Draft description",
+      projectId: null,
+      tenantId: "tenant-1",
+      createdByUserId: "u1",
+      status: "structured",
+      assignedAgentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const response = await POST(requestWithId("di-1"), { params: Promise.resolve({ id: "di-1" }) });
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.status).toBe("structured");
+    expect(json.assignedAgentId).toBeNull();
     expect(prismaMock.draftIdea.update).toHaveBeenCalledWith({
       where: { id: "di-1" },
       data: { status: "structured" },
