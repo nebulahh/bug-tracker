@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useFormAction, useFormStatus } from "react-dom";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
 import { currentTenantAccess } from "@/lib/tenant-access";
@@ -7,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { ErrorSummary } from "@/components/ui/field-errors";
 
 export const metadata = { title: "New draft idea" };
 
@@ -56,12 +60,47 @@ export default async function NewDraftIdeaPage() {
 }
 
 function NewDraftIdeaForm({ projects }: { projects: ProjectOption[] }) {
+  const [error, setError] = React.useState<string | null>(null);
+  const [pending, setPending] = React.useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const projectId = formData.get("projectId") as string || undefined;
+
+    try {
+      const response = await fetch("/api/draft-ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description, projectId }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        setError(errorBody.error || "Failed to create draft idea");
+        return;
+      }
+
+      window.location.href = "/issues";
+    } catch {
+      setError("Failed to create draft idea. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <form
-      action="/api/draft-ideas"
-      method="POST"
-      className="space-y-4 max-w-2xl"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       <div className="space-y-1.5">
         <label htmlFor="title" className="text-sm font-medium text-zk-text">
           Title
@@ -101,7 +140,9 @@ function NewDraftIdeaForm({ projects }: { projects: ProjectOption[] }) {
         >
           Cancel
         </Link>
-        <Button type="submit">Create draft idea</Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Creating…" : "Create draft idea"}
+        </Button>
       </div>
     </form>
   );
