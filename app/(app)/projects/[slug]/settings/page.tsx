@@ -4,7 +4,6 @@ import { requireUser } from "@/lib/auth-helpers";
 import { currentTenantIdFor } from "@/lib/tenant-context";
 import { isTenantAdmin } from "@/lib/agents/membership";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { ProjectSettingsForm } from "./settings-form";
 import { ProjectAreasManager } from "./areas-manager";
 import { ProjectApprovalRulesSection } from "./approval-rules";
@@ -74,14 +73,21 @@ export default async function ProjectSettingsPage({
       {github === "error" ? <p role="alert" className="rounded-[14px] bg-zk-warn-bg p-3 text-sm text-zk-warn-fg">GitHub setup could not be completed. Start the connection again from this page.</p> : null}
       {github === "connected" ? <p role="status" className="rounded-[14px] bg-zk-ok-bg p-3 text-sm text-zk-ok-fg">GitHub App installation connected.</p> : null}
       {github === "unavailable" ? <p role="alert" className="rounded-[14px] bg-zk-warn-bg p-3 text-sm text-zk-warn-fg">The GitHub App is not configured. Set GITHUB_APP_SLUG before connecting it.</p> : null}
+      {github === "requested" ? <p role="status" className="rounded-[14px] bg-zk-warn-bg p-3 text-sm text-zk-warn-fg">GitHub App installation was requested and is waiting for organization admin approval.</p> : null}
+      {github === "cancelled" ? <p role="status" className="rounded-[14px] bg-zk-surface p-3 text-sm text-zk-text2">GitHub App connection was cancelled.</p> : null}
       <section className="space-y-5 rounded-[20px] border border-zk-border bg-zk-surface p-4 sm:p-6">
         <ProjectSettingsForm project={project} defaults={platformDefaults} />
         <div className="border-t border-zk-border pt-5">
           <h2 className="text-base font-semibold text-zk-text">GitHub App</h2>
           <p className="mt-1 text-sm text-zk-text2">Installation ID: {project.githubInstallationId ?? "Not connected"}. No access token is stored.</p>
-          <form action={`/projects/${encodeURIComponent(project.slug)}/settings/github`} method="get" className="mt-3">
-            <Button type="submit">{project.githubInstallationId ? "Change installation" : "Connect GitHub App"}</Button>
-          </form>
+          <div className="mt-3">
+            <a
+              href={`/projects/${encodeURIComponent(project.slug)}/settings/github`}
+              className="inline-flex items-center justify-center rounded-full bg-teal-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
+            >
+              {project.githubInstallationId ? "Change installation" : "Connect GitHub App"}
+            </a>
+          </div>
         </div>
       </section>
       <section className="space-y-5 rounded-[20px] border border-zk-border bg-zk-surface p-4 sm:p-6" aria-labelledby="workflow-heading">

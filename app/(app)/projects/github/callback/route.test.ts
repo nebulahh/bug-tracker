@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const requireUser = vi.hoisted(() => vi.fn());
@@ -28,6 +28,9 @@ const callback = (query: string) => new NextRequest(`http://localhost/projects/g
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("AUTH_URL", "");
+  vi.stubEnv("NEXTAUTH_URL", "");
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
   requireUser.mockResolvedValue({ id: "user-1", role: "user" });
   currentTenantIdFor.mockResolvedValue("tenant-1");
   isTenantAdmin.mockResolvedValue(true);
@@ -36,6 +39,10 @@ beforeEach(() => {
   transaction.mockImplementation((work: (tx: unknown) => Promise<unknown>) =>
     work({ project: { update }, projectAuditEvent: { create: audit } }),
   );
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("GitHub App project callback (#608)", () => {
@@ -62,5 +69,34 @@ describe("GitHub App project callback (#608)", () => {
     expect(response.headers.get("location")).toBe("http://localhost/issues");
     expect(projectFindFirst).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("connects when GitHub omits state or setup_action if the cookie is present (#539)", async () => {
+    const response = await GET(callback("installation_id=98765"));
+    expect(response.headers.get("location")).toContain("/projects/web/settings?github=connected");
+    expect(update).toHaveBeenCalledWith({ where: { id: "project-1" }, data: { githubInstallationId: "98765" } });
+  });
+
+  it("handles user cancellation on GitHub gracefully (#539)", async () => {
+    const response = await GET(callback("error=access_denied&error_description=The+user+cancelled"));
+    expect(response.headers.get("location")).toContain("/projects/web/settings?github=cancelled");
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("handles org admin request setup_action (#539)", async () => {
+    const response = await GET(callback("installation_id=12345&setup_action=request"));
+    expect(response.headers.get("location")).toContain("/projects/web/settings?github=requested");
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("respects reverse proxy headers for redirect location (#539)", async () => {
+    const request = new NextRequest("http://0.0.0.0:3000/projects/github/callback?installation_id=12345&state=web.random-state&setup_action=install", {
+      headers: {
+        "x-forwarded-host": "ziki.dev",
+        "x-forwarded-proto": "https",
+      },
+    });
+    const response = await GET(request);
+    expect(response.headers.get("location")).toBe("https://ziki.dev/projects/web/settings?github=connected");
   });
 });
