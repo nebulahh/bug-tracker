@@ -83,6 +83,7 @@ import { DeleteIssueButton } from "@/components/delete-issue-button";
 import { RestoreIssueButton } from "@/components/restore-issue-button";
 import { canAssignTicket } from "@/lib/ticket-assignment";
 import { SelfAssignButton } from "@/components/self-assign-button";
+import { HumanNoteDialog } from "@/components/human-note-dialog";
 import { EditableIssueDescription } from "@/components/editable-issue-description";
 import { EditableProofLinks } from "@/components/editable-proof-links";
 import { withCurrentOption } from "@/lib/triage-options";
@@ -221,6 +222,21 @@ export default async function BugDetailPage({ params, searchParams }: BugPagePro
   const query = (await searchParams) ?? {};
   const resolved = await resolveSessionUserId();
   const userId = "userId" in resolved ? resolved.userId : undefined;
+
+  // Preserve the current list filters when linking back to the issues list (#11).
+  const backToIssuesHref = (() => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const v of value) params.append(key, v);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const qs = params.toString();
+    return qs ? `/issues?${qs}` : "/issues";
+  })();
 
   // Unauthenticated link-preview bots get the title and status only (#117).
   // They're recognised by User-Agent, which anyone can fake, so nothing more
@@ -805,6 +821,9 @@ export default async function BugDetailPage({ params, searchParams }: BugPagePro
       {canTriage && !bug.isDeleted && !bug.duplicateOf ? (
         <MarkDuplicateButton bugId={bug.id} />
       ) : null}
+      {bug.status === "in_progress" && !bug.isDeleted && (isAssignee || bug.reporterId === userId) ? (
+        <HumanNoteDialog bugId={bug.id} projectId={bug.projectId ?? ""} />
+      ) : null}
     </>
   );
 
@@ -949,7 +968,7 @@ export default async function BugDetailPage({ params, searchParams }: BugPagePro
           <div className="min-w-0 flex-[1_1_600px] space-y-3">
             <div className="flex items-start gap-2">
               <Link
-                href="/issues"
+                href={backToIssuesHref}
                 aria-label="Back to issues"
                 title="Back to issues"
                 className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zk-accent hover:bg-zk-chip print:hidden"

@@ -1301,17 +1301,19 @@ function FirstRunWelcome({
 
   return (
     <section className="rounded-[20px] border border-zk-border bg-zk-surface px-5 py-8 text-center">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zk-tint text-zk-accent mb-3" aria-hidden="true">
+        🐛
+      </span>
       <h2 className="text-lg font-bold text-zk-text">No issues yet</h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-zk-muted">
-        This is where reported issues will appear. A good report says what you
-        expected, what happened instead, and how to make it happen again.
+        Agents can\u2019t fix what no one reports. File the first issue and watch them pick it up.
       </p>
       <div className="mt-5">
         <Link
           href="/issues/new"
-          className="inline-flex h-[42px] items-center justify-center rounded-full bg-electric-blue-strong px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(46,111,239,0.35)]"
+          className="inline-flex h-[48px] items-center justify-center gap-1.5 rounded-full bg-electric-blue-strong px-6 text-sm font-bold text-white shadow-[0_8px_20px_rgba(46,111,239,0.35)] hover:bg-blue-slate focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zk-accent"
         >
-          Report the first issue
+          🐛 Report the first issue
         </Link>
       </div>
       {isAdmin ? (

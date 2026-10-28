@@ -24,6 +24,7 @@ import { LocalTime } from "@/components/local-time";
 import { BASE_PATH } from "@/lib/base-path";
 import { PAGE_CONTAINER_CLASS } from "@/components/page-container";
 import { ZikiMark } from "@/components/ziki-mark";
+import { ZikiMoodAgent } from "@/components/ziki-mood-agent";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2";
@@ -556,6 +557,9 @@ export function AppHeader({
 
           {/* The bell sits last, right after the points. */}
           <NotificationsBell key={`${userId}:${activeTenantId}:${pathname}`} unreadCount={unreadCount} active={isNavItemActive(pathname, "/notifications")} />
+
+          {/* Whimsical Ziki mood agent beside the bell — click to reroll moods. */}
+          <ZikiMoodAgent />
         </div>
       </div>
     </header>
