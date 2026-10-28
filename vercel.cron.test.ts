@@ -4,8 +4,14 @@ import { describe, expect, it } from "vitest";
 /** Vercel Hobby accepts cron jobs that run no more than once per day. */
 describe("vercel.json cron (Vercel Hobby)", () => {
   const config = JSON.parse(readFileSync("vercel.json", "utf8")) as {
+    buildCommand: string;
     crons?: { path: string; schedule: string }[];
   };
+
+  it("skips database migrations on Vercel preview builds", () => {
+    expect(config.buildCommand).toContain('if [ "$VERCEL_ENV" = "production" ]');
+    expect(config.buildCommand).toContain("prisma migrate deploy");
+  });
 
   it("schedules the webhook dispatcher once a day", () => {
     const cron = config.crons?.find((entry) => entry.path === "/api/v1/webhooks/dispatch");
