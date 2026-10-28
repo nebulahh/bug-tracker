@@ -1,0 +1,62 @@
+.awakeEyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agent-blink 4.8s ease-in-out infinite;
+}
+
+.sleepingHead {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agent-breathe 2.8s ease-in-out infinite;
+}
+
+.sleepingZ {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agent-dream 2.2s ease-in-out infinite;
+}
+
+@keyframes agent-blink {
+  0%,
+  45%,
+  49%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  47% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes agent-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+
+  50% {
+    transform: translateY(0.5px) scaleY(0.97);
+  }
+}
+
+@keyframes agent-dream {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(0, 1px) scale(0.88);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(1px, -2px) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .awakeEyes,
+  .sleepingHead,
+  .sleepingZ {
+    animation: none;
+  }
+}

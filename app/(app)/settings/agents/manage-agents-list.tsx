@@ -6,12 +6,11 @@ import type { AgentLevel } from "@prisma/client";
 import { AGENT_LEVEL_LABELS, AGENT_LEVELS } from "@/lib/agents/levels";
 import { LocalTime } from "@/components/local-time";
 import { RelativeTime } from "@/components/relative-time";
+import { AgentGraphic } from "@/components/agent-graphic";
 import { AgentControls } from "./agent-controls";
 import { AgentRowKey } from "./agent-row-key";
 import type { AgentProjectChoice } from "./create-agent-form";
 import {
-  agentAvatarColor,
-  agentInitials,
   agentsLink,
   agentsMutedClass,
   agentsSurface,
@@ -183,31 +182,30 @@ export function ManageAgentsList({
         <ul className="space-y-3">
           {visible.map((agent) => {
             const lastUsed = agent.apiKeys.find((key) => key.lastUsedAt)?.lastUsedAt ?? null;
+            const awake = !agent.revokedAt && agent.recent;
             return (
               <li key={agent.id} className={`${agentsSurface} p-4 sm:p-5`}>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex min-w-0 gap-3">
-                    <div className="relative shrink-0">
-                      <span
-                        className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-extrabold text-white ${agentAvatarColor(agent.id)}`}
-                      >
-                        {agentInitials(agent.name)}
-                      </span>
-                      {!agent.revokedAt ? (
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-zk-surface ${
-                            agent.recent ? "bg-emerald-500" : "bg-slate-400"
-                          }`}
-                          aria-hidden
-                        />
-                      ) : null}
-                    </div>
+                    <AgentGraphic
+                      name={agent.name}
+                      status={awake ? "idle" : "offline"}
+                      size={44}
+                    />
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="break-words text-base font-extrabold text-zk-text">
                           {agent.name}
                           {agent.personal ? <span className="font-normal text-zk-muted"> · personal</span> : null}
                         </p>
+                        <span
+                          title={awake ? "Seen within the last 24 hours" : "No activity in the last 24 hours"}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                            awake ? "bg-zk-ok-bg text-zk-ok-fg" : "bg-zk-chip text-zk-muted"
+                          }`}
+                        >
+                          {awake ? "Awake" : "Sleeping"}
+                        </span>
                         <span className={levelBadgeClass(agent.level)}>{AGENT_LEVEL_LABELS[agent.level]}</span>
                         {agent.revokedAt ? (
                           <span className="inline-flex items-center rounded-full bg-zk-bad-bg px-2.5 py-0.5 text-xs font-bold text-zk-bad-fg">

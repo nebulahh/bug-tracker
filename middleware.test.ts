@@ -55,6 +55,11 @@ describe("isPublicPath (#348)", () => {
     expect(isPublicPath("/llms.txt")).toBe(true);
   });
 
+  it("lets the read-only agent avatar preview load without a session", () => {
+    expect(isPublicPath("/agent-presence-preview")).toBe(true);
+    expect(isPublicPath("/agent-presence-preview/details")).toBe(false);
+  });
+
   it("treats auth and password reset pages as public", () => {
     expect(isPublicPath("/login")).toBe(true);
     expect(isPublicPath("/signup")).toBe(true);

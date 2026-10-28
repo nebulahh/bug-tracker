@@ -31,6 +31,7 @@ export function isPublicPath(
     pathWithoutBase === "/" ||
     pathWithoutBase === "" ||
     pathWithoutBase === "/llms.txt" ||
+    pathWithoutBase === "/agent-presence-preview" ||
     isAuthPage ||
     isPasswordResetPage ||
     isIssuePreview ||

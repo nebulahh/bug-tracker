@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { currentTenantIdFor } from "@/lib/tenant-context";
 import { tenantsForUser } from "@/lib/tenants";
 import { countPendingEscalations } from "@/lib/agent-questions";
-import { loadOwnAgents } from "@/lib/dashboard-overview";
+import { loadOwnAgents, type AgentStatus } from "@/lib/dashboard-overview";
 import { pointTotals } from "@/lib/points/leaderboard";
 import { getPlatformRewardConfig } from "@/lib/points/platform-rewards";
 import { TARGET_POINTS } from "@/lib/points/rules";
@@ -74,7 +74,7 @@ export default async function AppLayout({
   let pendingEscalationsCount = 0;
   let points = 0;
   let solvedTasks = 0;
-  let shellAgents: { id: string; name: string; level: string }[] = [];
+  let shellAgents: { id: string; name: string; level: string; status: AgentStatus }[] = [];
   let targetPoints = TARGET_POINTS;
   try {
     targetPoints = (await getPlatformRewardConfig(prisma)).target;
@@ -96,7 +96,12 @@ export default async function AppLayout({
     }
     try {
       const agents = await loadOwnAgents({ userId: user.id, tenantId });
-      shellAgents = agents.map((agent) => ({ id: agent.id, name: agent.name, level: agent.level }));
+      shellAgents = agents.map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        level: agent.level,
+        status: agent.status,
+      }));
     } catch (error) {
       console.error("[layout] agents failed", error);
     }

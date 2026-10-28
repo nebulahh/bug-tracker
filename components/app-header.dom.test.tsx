@@ -208,6 +208,24 @@ describe("account menu role switch", () => {
     expect(screen.getByRole("button", { name: "Agents" }).getAttribute("aria-expanded")).toBe("false");
   });
 
+  it("shows animated awake and sleeping avatars with real status in the Agents menu", async () => {
+    const user = userEvent.setup();
+    renderHeader({
+      agents: [
+        { id: "awake", name: "Ajala", level: "triager", status: "working" },
+        { id: "sleeping", name: "ChatGPT Agent", level: "reviewer", status: "offline" },
+      ],
+    });
+
+    await user.click(screen.getByRole("button", { name: "Agents" }));
+
+    const awakeAgent = screen.getByRole("link", { name: "Ajala, Working, Triager" });
+    const sleepingAgent = screen.getByRole("link", { name: "ChatGPT Agent, Sleeping, Reviewer" });
+    expect(awakeAgent.querySelector('svg[data-agent-state="awake"]')).not.toBeNull();
+    expect(sleepingAgent.querySelector('svg[data-agent-state="sleeping"]')).not.toBeNull();
+    expect(screen.queryByText("AJ")).toBeNull();
+  });
+
   it("lists Escalations in the account menu, with the pending count (#763)", async () => {
     const user = userEvent.setup();
     renderHeader({ pendingEscalationsCount: 5 });

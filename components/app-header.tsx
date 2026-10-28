@@ -9,7 +9,6 @@ import { WorkspaceSwitcher, type WorkspaceChoice } from "@/components/workspace-
 import {
   AGENT_MENU_LINKS,
   headerNavItems,
-  initialsOf,
   isNavItemActive,
   realRoleOf,
   roleViewLabels,
@@ -25,14 +24,24 @@ import { BASE_PATH } from "@/lib/base-path";
 import { PAGE_CONTAINER_CLASS } from "@/components/page-container";
 import { ZikiMark } from "@/components/ziki-mark";
 import { ZikiMoodAgent } from "@/components/ziki-mood-agent";
+import { AgentGraphic } from "@/components/agent-graphic";
+import type { AgentStatus } from "@/lib/dashboard-overview";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2";
+
+const AGENT_STATUS_LABEL: Record<AgentStatus, string> = {
+  working: "Working",
+  waiting: "Waiting on you",
+  idle: "Awake and standing by",
+  offline: "Sleeping",
+};
 
 export type ShellAgent = {
   id: string;
   name: string;
   level: string;
+  status: AgentStatus;
 };
 
 /** Closes a popover on outside click or Escape, returning focus to its trigger. */
@@ -322,11 +331,10 @@ function AgentsMenu({ pathname, agents }: { pathname: string | null; agents: She
               key={agent.id}
               href="/settings/agents"
               onClick={() => setOpen(false)}
+              aria-label={`${agent.name}, ${AGENT_STATUS_LABEL[agent.status]}, ${levelLabel(agent.level)}`}
               className="flex min-h-11 items-center gap-2.5 rounded-[10px] px-2.5 text-left text-zk-text"
             >
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-zk-tint text-xs font-extrabold text-zk-accent">
-                {initialsOf(agent.name)}
-              </span>
+              <AgentGraphic name={agent.name} status={agent.status} size={34} />
               <span className="min-w-0 flex-1 truncate font-semibold">{agent.name}</span>
               <span className="rounded-full bg-zk-info-bg px-2 py-0.5 text-[11px] font-bold text-zk-info-fg">
                 {levelLabel(agent.level)}
