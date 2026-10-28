@@ -222,6 +222,14 @@ export default async function BugDetailPage({ params, searchParams }: BugPagePro
   const resolved = await resolveSessionUserId();
   const userId = "userId" in resolved ? resolved.userId : undefined;
 
+  // Preserve the current list filters when navigating back from issue page (#11).
+  // Next.js preserves searchParams across page navigations, so we can read
+  // the current status filter from the issue page URL and pass it back.
+  const backToIssuesHref = (() => {
+    const status = searchParams.get("status");
+    return status ? `/issues?status=${status}` : "/issues";
+  })();
+
   // Unauthenticated link-preview bots get the title and status only (#117).
   // They're recognised by User-Agent, which anyone can fake, so nothing more
   // sensitive (reporter, severity, description) may appear here.
