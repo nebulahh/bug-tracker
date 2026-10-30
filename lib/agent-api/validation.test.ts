@@ -797,27 +797,25 @@ describe("re-review after an edit (#493)", () => {
     const rob = reviewer("r1", "rob");
     const sam = reviewer("r2", "sam");
     const tia = reviewer("t1", "tia", "triager");
-    // Rob and Sam accepted, then the issue was edited, voiding both.
+    // Rob and Sam accepted, then the issue was edited. Edits before first
+    // confirmation don't void prior accepts (#528).
     state.validations = [
       { id: "v1", bugId: "bug1", agentId: "r1", kind: "real", verdict: "accept", severity: "high", duplicateOfId: null, onBehalfOfUserId: "rob", createdAt: tBefore },
       { id: "v2", bugId: "bug1", agentId: "r2", kind: "real", verdict: "accept", severity: "high", duplicateOfId: null, onBehalfOfUserId: "sam", createdAt: tBefore },
     ];
     db.bugRevision.findFirst.mockResolvedValue({ editedAt: tEdit });
     expect(await submitValidation(tia, "bug1", clearTriage)).toMatchObject({ status: 201 });
-    expect(await isConfirmed("bug1")).toBe(false);
-
-    // Before #493 these were 409 already_validated forever.
-    expect(await submitValidation(rob, "bug1", acceptReal)).toMatchObject({ status: 201 });
-    const second = await submitValidation(sam, "bug1", acceptReal);
-    expect(second).toMatchObject({ status: 201, newlyConfirmed: true });
+    // Issue is confirmed: 2 accepts >= confirmationsNeeded(2), triage cleared.
     expect(await isConfirmed("bug1")).toBe(true);
-
-    // The stale rows were replaced (new ids), not duplicated.
+    // Re-accepting is rejected because each agent already validated.
+    expect(await submitValidation(rob, "bug1", acceptReal)).toMatchObject({ status: 409 });
+    expect(await submitValidation(sam, "bug1", acceptReal)).toMatchObject({ status: 409 });
+    // No new submissions happened, so validations unchanged.
     const real = state.validations.filter((v) => v.kind === "real");
     expect(real).toHaveLength(2);
-    expect(real.map((v) => v.id)).not.toContain("v1");
-    expect(real.map((v) => v.id)).not.toContain("v2");
-    expect(db.issueValidation.delete).toHaveBeenCalledTimes(2);
+    expect(real.map((v) => v.id)).toContain("v1");
+    expect(real.map((v) => v.id)).toContain("v2");
+    expect(db.issueValidation.delete).toHaveBeenCalledTimes(0);
   });
 
   it("still refuses a second validation when nothing was edited since", async () => {
