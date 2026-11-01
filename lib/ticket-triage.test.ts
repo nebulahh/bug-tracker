@@ -72,4 +72,52 @@ describe("canChangeTicketStatus", () => {
       }),
     ).toBe(false);
   });
+
+  it("allows the reporter of an unconfirmed, unassigned issue to change status (#649)", () => {
+    expect(
+      canChangeTicketStatus({
+        actorId: "reporter-1",
+        actorRole: "user",
+        currentAssigneeId: null,
+        reporterId: "reporter-1",
+        confirmed: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("denies the reporter of a confirmed issue from changing status (#649)", () => {
+    expect(
+      canChangeTicketStatus({
+        actorId: "reporter-1",
+        actorRole: "user",
+        currentAssigneeId: null,
+        reporterId: "reporter-1",
+        confirmed: true,
+      }),
+    ).toBe(false);
+  });
+
+  it("denies the reporter of an assigned issue from changing status (#649)", () => {
+    expect(
+      canChangeTicketStatus({
+        actorId: "reporter-1",
+        actorRole: "user",
+        currentAssigneeId: "assignee-1",
+        reporterId: "reporter-1",
+        confirmed: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("denies a non-reporter on an unconfirmed, unassigned issue (#649)", () => {
+    expect(
+      canChangeTicketStatus({
+        actorId: "random-user",
+        actorRole: "user",
+        currentAssigneeId: null,
+        reporterId: "reporter-1",
+        confirmed: false,
+      }),
+    ).toBe(false);
+  });
 });
