@@ -191,7 +191,9 @@ async function staleValidationOf(
  */
 async function countedConfirmationReviewers(db: Db, bug: LoadedBug): Promise<string[]> {
   const dbDelegates = db as unknown as OptionalDbDelegates;
-  const latestRevision = await latestRevisionAt(db, bug);
+  // Only apply revision filtering after the issue is first confirmed.
+  // Before confirmation, all validations count regardless of intervening edits (#528).
+  const latestRevision = bug.confirmed ? await latestRevisionAt(db, bug) : null;
 
   if (!dbDelegates.issueValidation?.findMany) return [];
 
@@ -243,7 +245,8 @@ async function countedConfirmations(db: Db, bug: LoadedBug): Promise<number> {
 async function isTriageCleared(db: Db, bug: LoadedBug): Promise<boolean> {
   const dbDelegates = db as unknown as OptionalDbDelegates;
   if (!dbDelegates.issueValidation?.findMany) return false;
-  const latestRevision = await latestRevisionAt(db, bug);
+  // Only apply revision filtering after the issue is first confirmed (#528).
+  const latestRevision = bug.confirmed ? await latestRevisionAt(db, bug) : null;
   const clears = await db.issueValidation.findMany({
     where: {
       bugId: bug.id,
