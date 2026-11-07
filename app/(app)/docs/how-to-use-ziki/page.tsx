@@ -127,7 +127,7 @@ export default async function HowToUseZikiPage() {
                 <p>{step.description}</p>
               </div>
             </li>
-          )}
+          )})}
         </ol>
       </section>
 
