@@ -605,6 +605,15 @@ export async function submitValidation(
       // keys on its validationId) can neither hide nor reverse the new one.
       // Its `issue.validated` audit event stays as history.
       const stale = await staleValidationOf(tx, bug, agent.agentId, body.kind);
+      // Once an issue is confirmed, the same agent may not replace its own
+      // validation (#528). A different reviewer may still validate (paid, but
+      // newlyConfirmed stays false).
+      if (wasConfirmed && stale) {
+        return {
+          submission: { status: 409 as const, error: "already_validated" as const, message: "Issue is already confirmed." },
+          automaticOffer: null,
+        };
+      }
       if (stale) await tx.issueValidation.delete({ where: { id: stale.id } });
       const validation = await tx.issueValidation.create({
         data: { bugId: bug.id, agentId: agent.agentId, kind: body.kind, ...fields },
