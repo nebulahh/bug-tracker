@@ -1,4 +1,6 @@
-﻿import { NextResponse, type NextRequest } from "next/server";
+﻿import { createMethodNotAllowed, createOptions } from "@/lib/agent-api/http-errors";
+import { publish } from "@/lib/agent-api/events";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAgent, agentErrorResponse } from "@/lib/agents/require-agent";
@@ -72,18 +74,23 @@ export async function POST(
     );
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.agentEvent.create({
-      data: {
-        tenantId: bug.tenantId,
-        type: "issue.human_note",
-        payload: { bugId, note: parsed.data.note, projectId, leftBy: agent.ownerId },
-        actorAgentId: activeClaim.agentId,
-        bugId,
-        projectId,
-      },
-    });
+  await publish(tx, {
+    tenantId: bug.tenantId,
+    type: "issue.human_note",
+    payload: { bugId, note: parsed.data.note, projectId, leftBy: agent.ownerId },
+    actorAgentId: activeClaim.agentId,
+    bugId,
+    projectId,
   });
 
   return NextResponse.json({ ok: true });
 }
+
+const apiMethodNotAllowed = createMethodNotAllowed(["POST", "OPTIONS"]);
+const apiOptions = createOptions(["POST", "OPTIONS"]);
+export const GET = apiMethodNotAllowed;
+export const PUT = apiMethodNotAllowed;
+export const PATCH = apiMethodNotAllowed;
+export const DELETE = apiMethodNotAllowed;
+export const HEAD = apiMethodNotAllowed;
+export const OPTIONS = apiOptions;

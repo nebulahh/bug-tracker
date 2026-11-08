@@ -56,7 +56,10 @@ export function ZikiMoodAgent() {
       </span>
 
       {/* Tooltip showing the current mood name. */}
-      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden sm:block whitespace-nowrap rounded-lg bg-zk-surface px-2 py-1 text-xs font-medium text-zk-text border border-zk-border shadow-lg">
+      <span
+        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden sm:block whitespace-nowrap rounded-lg bg-zk-surface px-2 py-1 text-xs font-medium text-zk-text border border-zk-border shadow-lg"
+        aria-hidden="true"
+      >
         Ziki: {mood.name}
       </span>
     </button>
