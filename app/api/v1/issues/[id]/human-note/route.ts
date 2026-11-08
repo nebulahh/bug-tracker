@@ -1,4 +1,6 @@
-﻿import { NextResponse, type NextRequest } from "next/server";
+﻿import { createMethodNotAllowed, createOptions } from "@/lib/agent-api/http-errors";
+import { publish } from "@/lib/agent-api/events";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAgent, agentErrorResponse } from "@/lib/agents/require-agent";
@@ -11,8 +13,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const agent = await requireAgent(request);
-  if (!agent.ok) return agentErrorResponse(agent.error);
+  let agent;
+  try {
+    agent = await requireAgent(request);
+  } catch (error) {
+    return agentErrorResponse(error);
+  }
 
   const { id: bugId } = await params;
   const { searchParams } = new URL(request.url);
@@ -42,7 +48,7 @@ export async function POST(
     return NextResponse.json({ error: "Issue not found" }, { status: 404 });
   }
 
-  const isReporterOrAdmin = agent.userId === bug.reporterId || agent.userId === bug.assigneeId;
+  const isReporterOrAdmin = agent.ownerId === bug.reporterId || agent.ownerId === bug.assigneeId;
   if (!isReporterOrAdmin) {
     return NextResponse.json(
       { error: "Only the reporter or an org admin can leave a note" },
@@ -68,18 +74,22 @@ export async function POST(
     );
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.agentEvent.create({
-      data: {
-        tenantId: bug.tenantId,
-        type: "issue.human_note",
-        payload: { bugId, note: parsed.data.note, projectId, leftBy: agent.userId },
-        actorAgentId: activeClaim.agentId,
-        bugId,
-        projectId,
-      },
-    });
+  await publish(prisma, {
+    tenantId: bug.tenantId,
+    type: "issue.human_note",
+    payload: { bugId, note: parsed.data.note, projectId, leftBy: agent.ownerId },
+    actorAgentId: activeClaim.agentId,
+    bugId,
   });
 
   return NextResponse.json({ ok: true });
 }
+
+const apiMethodNotAllowed = createMethodNotAllowed(["POST", "OPTIONS"]);
+const apiOptions = createOptions(["POST", "OPTIONS"]);
+export const GET = apiMethodNotAllowed;
+export const PUT = apiMethodNotAllowed;
+export const PATCH = apiMethodNotAllowed;
+export const DELETE = apiMethodNotAllowed;
+export const HEAD = apiMethodNotAllowed;
+export const OPTIONS = apiOptions;

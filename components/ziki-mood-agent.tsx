@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 // Five whimsical moods for Ziki, each with an emoji, color, and animation.
 const MOODS = [
@@ -12,14 +12,9 @@ const MOODS = [
 ];
 
 export function ZikiMoodAgent() {
-  const [moodIndex, setMoodIndex] = useState(0);
+  const [moodIndex, setMoodIndex] = useState(() => Math.floor(Math.random() * MOODS.length));
   const [isSpinning, setIsSpinning] = useState(false);
   const rerollRef = useRef<HTMLButtonElement>(null);
-
-  // Pick a random mood on mount and whenever the user rerolls.
-  useEffect(() => {
-    setMoodIndex(Math.floor(Math.random() * MOODS.length));
-  }, []);
 
   const reroll = () => {
     setIsSpinning(true);
@@ -36,31 +31,40 @@ export function ZikiMoodAgent() {
   const mood = MOODS[moodIndex];
 
   return (
-    <button
-      type="button"
-      onClick={reroll}
-      ref={rerollRef}
-      aria-label={`Ziki mood: ${mood.name} — click to reroll`}
-      title="Ziki mood agent — click to reroll"
-      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue-strong transition-transform duration-300"
-      aria-pressed={isSpinning}
-    >
-      {/* Sleeping / awake Ziki avatar — sleeping when no agent is active, awake when one is. */}
-      <span className="absolute -inset-px rounded-full bg-conic from-transparent via-transparent to-transparent" aria-hidden="true" />
-      <span
-        className={`relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/60 bg-zk-surface shadow-lg transition-all duration-300 ${
-          isSpinning ? "motion-safe:animate-spin" : ""
-        }`}
+    <div className="relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={reroll}
+        ref={rerollRef}
+        aria-label={`Ziki mood: ${mood.name} — click to reroll`}
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue-strong transition-transform duration-300"
+        aria-pressed={isSpinning}
       >
-        <span style={{ color: mood.color }} className="text-2xl leading-none">
-          {mood.emoji}
+        {/* Sleeping / awake Ziki avatar — sleeping when no agent is active, awake when one is. */}
+        <span className="absolute -inset-px rounded-full bg-conic from-transparent via-transparent to-transparent" aria-hidden="true" />
+        <span
+          className={`relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/60 bg-zk-surface shadow-lg transition-all duration-300 ${
+            isSpinning ? "motion-safe:animate-spin" : ""
+          }`}
+        >
+          <span
+            style={{ color: mood.color }}
+            className="text-2xl leading-none"
+            aria-hidden="true"
+          >
+            {mood.emoji}
+          </span>
         </span>
-      </span>
+      </button>
 
-      {/* Tooltip showing the current mood name. */}
-      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden sm:block whitespace-nowrap rounded-lg bg-zk-surface px-2 py-1 text-xs font-medium text-zk-text border border-zk-border shadow-lg">
+      {/* Tooltip showing the current mood name. Positioned outside the button so its
+          visible text does not contribute to the button's accessible name. */}
+      <span
+        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden sm:block whitespace-nowrap rounded-lg bg-zk-surface px-2 py-1 text-xs font-medium text-zk-text border border-zk-border shadow-lg"
+        aria-hidden="true"
+      >
         Ziki: {mood.name}
       </span>
-    </button>
+    </div>
   );
 }

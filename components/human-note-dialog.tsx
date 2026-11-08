@@ -100,8 +100,11 @@ export function HumanNoteDialog({
                 <div className="rounded-lg border border-zk-bad-bd bg-zk-bad-bg/10 p-3 text-sm text-zk-bad-fg">{error}</div>
               )}
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-zk-text">Note</label>
+                <label htmlFor="human-note" className="block text-xs font-medium text-zk-text">
+                  Note
+                </label>
                 <textarea
+                  id="human-note"
                   value={noteValue}
                   onChange={(e) => setNoteValue(e.target.value)}
                   rows={4}
