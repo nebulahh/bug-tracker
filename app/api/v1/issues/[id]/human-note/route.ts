@@ -74,13 +74,12 @@ export async function POST(
     );
   }
 
-  await publish(tx, {
+  await publish(prisma, {
     tenantId: bug.tenantId,
     type: "issue.human_note",
     payload: { bugId, note: parsed.data.note, projectId, leftBy: agent.ownerId },
     actorAgentId: activeClaim.agentId,
     bugId,
-    projectId,
   });
 
   return NextResponse.json({ ok: true });
