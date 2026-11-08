@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 // Five whimsical moods for Ziki, each with an emoji, color, and animation.
 const MOODS = [
@@ -12,14 +12,9 @@ const MOODS = [
 ];
 
 export function ZikiMoodAgent() {
-  const [moodIndex, setMoodIndex] = useState(0);
+  const [moodIndex, setMoodIndex] = useState(() => Math.floor(Math.random() * MOODS.length));
   const [isSpinning, setIsSpinning] = useState(false);
   const rerollRef = useRef<HTMLButtonElement>(null);
-
-  // Pick a random mood on mount and whenever the user rerolls.
-  useEffect(() => {
-    setMoodIndex(Math.floor(Math.random() * MOODS.length));
-  }, []);
 
   const reroll = () => {
     setIsSpinning(true);
@@ -41,7 +36,6 @@ export function ZikiMoodAgent() {
       onClick={reroll}
       ref={rerollRef}
       aria-label={`Ziki mood: ${mood.name} — click to reroll`}
-      title="Ziki mood agent — click to reroll"
       className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zk-border bg-zk-surface text-zk-text hover:bg-zk-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue-strong transition-transform duration-300"
       aria-pressed={isSpinning}
     >
@@ -52,7 +46,11 @@ export function ZikiMoodAgent() {
           isSpinning ? "motion-safe:animate-spin" : ""
         }`}
       >
-        <span style={{ color: mood.color }} className="text-2xl leading-none">
+        <span
+          style={{ color: mood.color }}
+          className="text-2xl leading-none"
+          aria-hidden="true"
+        >
           {mood.emoji}
         </span>
       </span>
